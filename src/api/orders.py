@@ -18,6 +18,9 @@ from api.helpers import build_order_response
 from db.models import Order
 from db.models import OrderItem
 from db.session import get_db
+from kafka.producer import produce_cancelled_order_event
+from kafka.producer import produce_new_order_event
+from kafka.producer import produce_updated_order_status_event
 from schemas.order_schemas import OrderCreate
 from schemas.order_schemas import OrderItemResponse
 from schemas.order_schemas import OrderResponse
@@ -147,13 +150,15 @@ def create_order(
 
     db.commit()
 
-    return OrderResponse(
+    response = OrderResponse(
         order_id=db_order.id,
         customer_id=input_order.customer_id,
         items=response_items,
         total_price=total_price,
         status=OrderStatus.CREATED,
     )
+    produce_new_order_event(response)
+    return response
 
 
 @orders_router.patch(
@@ -191,7 +196,9 @@ def update_order_status(
     db.commit()
     db.refresh(db_order)
 
-    return build_order_response(db, db_order)
+    response = build_order_response(db, db_order)
+    produce_updated_order_status_event(response)
+    return response
 
 
 @orders_router.delete(
@@ -240,4 +247,6 @@ def cancel_order(
 
     logger.warning(db_items)
 
-    return build_order_response(db, db_order, db_items=db_items)
+    response = build_order_response(db, db_order, db_items=db_items)
+    produce_cancelled_order_event(response)
+    return response

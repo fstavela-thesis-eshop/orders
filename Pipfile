@@ -11,6 +11,7 @@ fastapi = "*"
 psycopg2 = "*"
 uvicorn = "*"
 requests = "*"
+confluent-kafka = "*"
 
 [dev-packages]
 pre-commit = "*"

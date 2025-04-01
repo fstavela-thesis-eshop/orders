@@ -48,3 +48,7 @@ class OrderResponse(OrderBase):
     items: list[OrderItemResponse]
     total_price: float
     status: OrderStatus
+
+
+class OrderEvent(OrderResponse):
+    message: str
