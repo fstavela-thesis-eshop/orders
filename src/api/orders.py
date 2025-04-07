@@ -5,7 +5,6 @@ from uuid import UUID
 
 from fastapi import APIRouter
 from fastapi import Depends
-from fastapi import Header
 from fastapi import HTTPException
 from fastapi import status
 from requests import patch
@@ -13,6 +12,7 @@ from requests.exceptions import HTTPError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from api.helpers import HeaderNoSchema
 from api.helpers import build_customer_orders_response
 from api.helpers import build_order_response
 from db.models import Order
@@ -38,8 +38,8 @@ orders_router = APIRouter()
 
 @orders_router.get("")
 def get_orders(
-    x_customer_id: Annotated[str, Header()],
-    x_is_admin: Annotated[bool, Header()],
+    x_customer_id: Annotated[str, HeaderNoSchema()],
+    x_is_admin: Annotated[bool, HeaderNoSchema()],
     db: Annotated[Session, Depends(get_db)],
 ) -> list[OrderResponse]:
     if x_is_admin:
@@ -50,8 +50,8 @@ def get_orders(
 @orders_router.get("/customer/{customer_id}", responses={status.HTTP_403_FORBIDDEN: {}})
 def get_customer_orders(
     customer_id: UUID,
-    x_customer_id: Annotated[str, Header()],
-    x_is_admin: Annotated[bool, Header()],
+    x_customer_id: Annotated[str, HeaderNoSchema()],
+    x_is_admin: Annotated[bool, HeaderNoSchema()],
     db: Annotated[Session, Depends(get_db)],
 ) -> list[OrderResponse]:
     if str(customer_id) != x_customer_id and not x_is_admin:
@@ -69,8 +69,8 @@ def get_customer_orders(
 )
 def get_order(
     order_id: UUID,
-    x_customer_id: Annotated[str, Header()],
-    x_is_admin: Annotated[bool, Header()],
+    x_customer_id: Annotated[str, HeaderNoSchema()],
+    x_is_admin: Annotated[bool, HeaderNoSchema()],
     db: Annotated[Session, Depends(get_db)],
 ) -> OrderResponse:
     db_order = db.get(Order, order_id)
@@ -93,8 +93,8 @@ def get_order(
 )
 def create_order(
     input_order: OrderCreate,
-    x_customer_id: Annotated[str, Header()],
-    x_is_admin: Annotated[bool, Header()],
+    x_customer_id: Annotated[str, HeaderNoSchema()],
+    x_is_admin: Annotated[bool, HeaderNoSchema()],
     db: Annotated[Session, Depends(get_db)],
 ) -> OrderResponse:
     if str(input_order.customer_id) != x_customer_id and not x_is_admin:
@@ -156,6 +156,8 @@ def create_order(
         items=response_items,
         total_price=total_price,
         status=OrderStatus.CREATED,
+        created_at=db_order.created_at,
+        updated_at=db_order.updated_at,
     )
     produce_new_order_event(response)
     return response
@@ -172,7 +174,7 @@ def create_order(
 def update_order_status(
     order_id: UUID,
     update_input: OrderUpdate,
-    x_is_admin: Annotated[bool, Header()],
+    x_is_admin: Annotated[bool, HeaderNoSchema()],
     db: Annotated[Session, Depends(get_db)],
 ) -> OrderResponse:
     if not x_is_admin:
@@ -211,8 +213,8 @@ def update_order_status(
 )
 def cancel_order(
     order_id: UUID,
-    x_customer_id: Annotated[str, Header()],
-    x_is_admin: Annotated[bool, Header()],
+    x_customer_id: Annotated[str, HeaderNoSchema()],
+    x_is_admin: Annotated[bool, HeaderNoSchema()],
     db: Annotated[Session, Depends(get_db)],
 ) -> OrderResponse:
     db_order = db.get(Order, order_id)

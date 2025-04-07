@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 from uuid import UUID
 
@@ -48,6 +49,8 @@ class OrderResponse(OrderBase):
     items: list[OrderItemResponse]
     total_price: float
     status: OrderStatus
+    created_at: datetime
+    updated_at: datetime
 
 
 class OrderEvent(OrderResponse):

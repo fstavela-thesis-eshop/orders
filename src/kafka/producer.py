@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from json import dumps
 from os import getenv
 from typing import Any
@@ -21,18 +22,18 @@ producer_conf = {"bootstrap.servers": getenv("KAFKA_SERVER", "localhost:9092")}
 producer = Producer(producer_conf)
 
 
-def _convert_uuids_to_str(data: dict[str, Any]) -> dict[str, Any]:
+def _make_dict_json_serializable(data: dict[str, Any]) -> dict[str, Any]:
     for key, value in data.items():
-        if isinstance(value, UUID):
-            data[key] = str(value)
+        if isinstance(value, dict):
+            data[key] = _make_dict_json_serializable(value)
         elif isinstance(value, list):
             for i, item in enumerate(value):
-                if isinstance(item, UUID):
+                if isinstance(item, dict):
+                    data[key][i] = _make_dict_json_serializable(item)
+                elif isinstance(item, UUID | datetime):
                     data[key][i] = str(item)
-                elif isinstance(item, dict):
-                    data[key][i] = _convert_uuids_to_str(item)
-        elif isinstance(value, dict):
-            data[key] = _convert_uuids_to_str(value)
+        elif isinstance(value, UUID | datetime):
+            data[key] = str(value)
     return data
 
 
@@ -40,7 +41,7 @@ def _log_event_delivery(err: KafkaError, msg: Message) -> None:
     if err is not None:
         logger.error(f"Kafka event delivery failed: {err}")
     else:
-        logger.warning(
+        logger.info(
             f"Kafka event produced:\nTopic: {msg.topic()}; "
             f"Partition: {msg.partition()}; Offset: {msg.offset()}\n"
             f"Key: {msg.key()}; Message: {msg.value()}"
@@ -55,7 +56,7 @@ def _produce_event(topic: str, key: str, event: dict[str, Any]) -> None:
 
 
 def _produce_order_event(order_event: OrderEvent) -> None:
-    event = _convert_uuids_to_str(order_event.model_dump())
+    event = _make_dict_json_serializable(order_event.model_dump())
     _produce_event(ORDERS_TOPIC, str(order_event.customer_id), event)
 
 
