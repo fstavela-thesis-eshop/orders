@@ -3,6 +3,7 @@ from enum import Enum
 from uuid import UUID
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 
 
 class OrderStatus(str, Enum):
@@ -17,8 +18,7 @@ class OrderItemBase(BaseModel):
     product_id: UUID
     quantity: int
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 class OrderItemResponse(OrderItemBase):
@@ -29,8 +29,7 @@ class OrderItemResponse(OrderItemBase):
 class OrderBase(BaseModel):
     customer_id: UUID
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 class OrderCreate(OrderBase):
@@ -40,8 +39,7 @@ class OrderCreate(OrderBase):
 class OrderUpdate(BaseModel):
     status: OrderStatus
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 class OrderResponse(OrderBase):

@@ -18,6 +18,12 @@ pre-commit = "*"
 ruff = "*"
 mypy = "*"
 types-requests = "*"
+pytest = "*"
+pytest-cov = "*"
+pytest-repeat = "*"
+pytest-mypy = "*"
+pytest-mock = "*"
+httpx = "*"
 
 [requires]
 python_version = "3.13"

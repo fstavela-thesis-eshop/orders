@@ -107,6 +107,12 @@ def create_order(
         {"id": str(item.product_id), "stock_quantity_dif": -item.quantity}
         for item in input_order.items
     ]
+    if not request_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You can't create an order without any items",
+        )
+
     try:
         response = patch(
             INVENTORY_STOCK_URL, json=request_data, headers={"x-is-admin": "true"}
@@ -236,7 +242,7 @@ def cancel_order(
 
     query = select(OrderItem).where(OrderItem.order_id == db_order.id)
     db_items = db.scalars(query).all()
-    logger.warning(db_items)
+
     request_data = [
         {"id": str(db_item.product_id), "stock_quantity_dif": db_item.quantity}
         for db_item in db_items
@@ -246,8 +252,6 @@ def cancel_order(
     db_order.status = OrderStatus.CANCELLED
     db.commit()
     db.refresh(db_order)
-
-    logger.warning(db_items)
 
     response = build_order_response(db, db_order, db_items=db_items)
     produce_cancelled_order_event(response)

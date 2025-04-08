@@ -25,3 +25,4 @@ repos:
       - pydantic
       - fastapi
       - types-requests
+      - pytest-mypy
